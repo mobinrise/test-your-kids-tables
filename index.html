@@ -18,7 +18,8 @@
         const { useState, useEffect, useRef } = React;
 
         function MultiplicationQuiz() {
-            const [gameMode, setGameMode] = useState('menu');
+            const [gameMode, setGameMode] = useState('name'); // name, menu, playing, results
+            const [studentName, setStudentName] = useState('');
             const [selectedMode, setSelectedMode] = useState('mixed');
             const [selectedTable, setSelectedTable] = useState(2);
             const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -32,6 +33,27 @@
             const [feedback, setFeedback] = useState('');
             const timerRef = useRef(null);
             const inputRef = useRef(null);
+
+            // Multiplication tricks database
+            const multiplicationTricks = {
+                '2': (n) => `Think: ${n} + ${n} = ${2*n}. Double the number!`,
+                '3': (n) => `Tip: Count by 3s: 3, 6, 9, 12... The ${n}th number is ${3*n}!`,
+                '4': (n) => `Trick: Double twice! ${n}×2=${n*2}, then ${n*2}×2=${n*4}`,
+                '5': (n) => `Easy: ${n}×5 = ${n}×10÷2 = ${n*10}÷2 = ${n*5}. Half of ${n*10}!`,
+                '6': (n) => `Think: ${n}×5=${n*5}, then add ${n} more = ${n*6}`,
+                '7': (n) => `Remember: 7×${n} = ${7*n}. Practice makes perfect!`,
+                '8': (n) => `Double three times! ${n}→${n*2}→${n*4}→${n*8}`,
+                '9': (n) => `Magic trick: ${n}×9 = ${n}×10 - ${n} = ${n*10} - ${n} = ${n*9}. One less than 10 times!`,
+                '10': (n) => `Super easy: Just add a zero! ${n}×10 = ${n}0`
+            };
+
+            const getTrick = (table, multiplier) => {
+                const tricks = multiplicationTricks[table.toString()];
+                if (tricks) {
+                    return tricks(multiplier);
+                }
+                return `Remember: ${table} × ${multiplier} = ${table * multiplier}. Practice it a few times!`;
+            };
 
             useEffect(() => {
                 if (gameMode === 'playing' && timeLeft > 0 && feedback === '') {
@@ -59,11 +81,10 @@
                         const multiplier = Math.floor(Math.random() * 10) + 1;
                         const key = `${table}-${multiplier}`;
                         
-                        // Check if this combination was used in last question
                         if (newQuestions.length > 0) {
                             const lastQ = newQuestions[newQuestions.length - 1];
                             if (lastQ.table === table && lastQ.multiplier === multiplier) {
-                                continue; // Skip duplicate
+                                continue;
                             }
                         }
                         
@@ -158,7 +179,6 @@
                     if (streak + 1 > bestStreak) setBestStreak(streak + 1);
                     setFeedback('correct');
                     
-                    // Auto-advance after 1.5 seconds for correct answer
                     setTimeout(() => {
                         moveToNextQuestion();
                     }, 1500);
@@ -166,7 +186,6 @@
                     playSound('wrong');
                     setStreak(0);
                     setFeedback('wrong');
-                    // Don't auto-advance for wrong answers - wait for user to click
                 }
             };
 
@@ -187,7 +206,6 @@
                 playSound('wrong');
                 setStreak(0);
                 setFeedback('timeout');
-                // Don't auto-advance for timeout - wait for user to click
             };
 
             const handleKeyPress = (e) => {
@@ -205,14 +223,59 @@
                 return '💪';
             };
 
+            const printCertificate = () => {
+                window.print();
+            };
+
+            // Name Entry Screen
+            if (gameMode === 'name') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 p-4 flex items-center justify-center">
+                        <div className="max-w-md w-full">
+                            <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
+                                <div className="text-6xl mb-4">👋</div>
+                                <h1 className="text-4xl font-bold text-gray-800 mb-4">Welcome!</h1>
+                                <p className="text-lg text-gray-600 mb-6">What's your name?</p>
+                                
+                                <input
+                                    type="text"
+                                    value={studentName}
+                                    onChange={(e) => setStudentName(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && studentName.trim()) {
+                                            setGameMode('menu');
+                                        }
+                                    }}
+                                    placeholder="Enter your name..."
+                                    className="w-full px-6 py-4 text-2xl text-center rounded-2xl border-4 border-purple-300 focus:outline-none focus:border-purple-500 mb-6"
+                                    autoFocus
+                                />
+                                
+                                <button
+                                    onClick={() => {
+                                        if (studentName.trim()) {
+                                            setGameMode('menu');
+                                        }
+                                    }}
+                                    disabled={!studentName.trim()}
+                                    className="w-full py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-xl rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Let's Start! 🚀
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
             if (gameMode === 'menu') {
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 p-4 flex items-center justify-center">
                         <div className="max-w-4xl w-full">
                             <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
                                 <div className="text-6xl mb-4 animate-bounce">🎯</div>
-                                <h1 className="text-5xl font-bold text-gray-800 mb-2">Multiplication Master!</h1>
-                                <p className="text-xl text-gray-600 mb-8">Test your multiplication tables skills!</p>
+                                <h1 className="text-5xl font-bold text-gray-800 mb-2">Hello, {studentName}! 👋</h1>
+                                <p className="text-xl text-gray-600 mb-8">Ready to test your multiplication skills?</p>
                                 
                                 <div className="grid md:grid-cols-2 gap-6 mb-8">
                                     <div 
@@ -285,7 +348,6 @@
                     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 p-4 flex items-center justify-center">
                         <div className="max-w-2xl w-full">
                             <div className="bg-white rounded-3xl shadow-2xl p-8">
-                                {/* Header with Main Menu Button */}
                                 <div className="flex justify-between items-center mb-8">
                                     <div className="text-lg font-bold text-gray-700">
                                         Question {currentQuestion + 1}/{totalQuestions}
@@ -308,7 +370,6 @@
                                     </div>
                                 </div>
 
-                                {/* Timer */}
                                 <div className="mb-8">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-gray-600 font-semibold">Time Left:</span>
@@ -326,7 +387,6 @@
                                     </div>
                                 </div>
 
-                                {/* Question */}
                                 <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-12 mb-8 text-center">
                                     <div className="text-7xl font-bold text-gray-800 mb-4">
                                         {question.table} × {question.multiplier} = ?
@@ -336,7 +396,6 @@
                                     )}
                                 </div>
 
-                                {/* Answer Input */}
                                 <div className="mb-8">
                                     <input
                                         ref={inputRef}
@@ -359,27 +418,20 @@
                                             ✅ Correct! Great job!
                                         </div>
                                     )}
-                                    {feedback === 'wrong' && (
-                                        <div className="mt-4 text-center">
-                                            <div className="text-2xl font-bold text-red-600 mb-3">
-                                                ❌ Wrong! The correct answer is {question.answer}
+                                    {(feedback === 'wrong' || feedback === 'timeout') && (
+                                        <div className="mt-4">
+                                            <div className={`text-center text-2xl font-bold mb-3 ${feedback === 'wrong' ? 'text-red-600' : 'text-orange-600'}`}>
+                                                {feedback === 'wrong' ? '❌ Wrong!' : '⏰ Time\'s up!'} The correct answer is {question.answer}
+                                            </div>
+                                            <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 mb-4">
+                                                <p className="text-blue-800 font-semibold text-lg">💡 Quick Trick:</p>
+                                                <p className="text-blue-700 text-base mt-2">
+                                                    {getTrick(question.table, question.multiplier)}
+                                                </p>
                                             </div>
                                             <button
                                                 onClick={moveToNextQuestion}
-                                                className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-xl transition-all"
-                                            >
-                                                Next Question →
-                                            </button>
-                                        </div>
-                                    )}
-                                    {feedback === 'timeout' && (
-                                        <div className="mt-4 text-center">
-                                            <div className="text-2xl font-bold text-orange-600 mb-3">
-                                                ⏰ Time's up! The correct answer is {question.answer}
-                                            </div>
-                                            <button
-                                                onClick={moveToNextQuestion}
-                                                className="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-xl transition-all"
+                                                className="w-full px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold text-xl rounded-xl transition-all"
                                             >
                                                 Next Question →
                                             </button>
@@ -387,7 +439,6 @@
                                     )}
                                 </div>
 
-                                {/* Submit Button */}
                                 {feedback === '' && (
                                     <button
                                         onClick={handleSubmit}
@@ -405,26 +456,91 @@
 
             if (gameMode === 'results') {
                 const percentage = (score / totalQuestions) * 100;
+                const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                 
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-green-500 via-blue-500 to-purple-500 p-4 flex items-center justify-center">
-                        <div className="max-w-2xl w-full">
+                        <div className="max-w-4xl w-full">
                             <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
                                 <div className="text-8xl mb-6 animate-bounce">
                                     {getScoreEmoji()}
                                 </div>
                                 
                                 <h2 className="text-5xl font-bold text-gray-800 mb-4">
-                                    {percentage === 100 ? 'Perfect Score!' :
-                                     percentage >= 80 ? 'Excellent Work!' :
-                                     percentage >= 60 ? 'Good Job!' :
-                                     percentage >= 40 ? 'Keep Practicing!' :
-                                     'Nice Try!'}
+                                    {percentage === 100 ? '🎉 Perfect Score!' :
+                                     percentage >= 80 ? '⭐ Excellent Work!' :
+                                     percentage >= 60 ? '👍 Good Job!' :
+                                     percentage >= 50 ? '😊 Keep Practicing!' :
+                                     '💪 Try Again After Practice!'}
                                 </h2>
                                 
                                 <div className="text-7xl font-bold text-purple-600 mb-8">
                                     {score}/{totalQuestions}
                                 </div>
+                                
+                                {percentage < 50 ? (
+                                    <div className="bg-orange-100 border-2 border-orange-400 rounded-2xl p-6 mb-8">
+                                        <p className="text-orange-800 font-bold text-xl mb-2">
+                                            Don't give up, {studentName}! 💪
+                                        </p>
+                                        <p className="text-orange-700 text-lg">
+                                            Practice makes perfect! Try again after reviewing the multiplication tables. You can do it!
+                                        </p>
+                                    </div>
+                                ) : percentage >= 80 ? (
+                                    <div>
+                                        {/* Certificate Card */}
+                                        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border-8 border-yellow-400 rounded-3xl p-8 mb-8 shadow-2xl">
+                                            <div className="text-6xl mb-4">🏆</div>
+                                            <h3 className="text-4xl font-bold text-gray-800 mb-4" style={{fontFamily: 'serif'}}>
+                                                Certificate of Excellence
+                                            </h3>
+                                            <div className="text-6xl mb-4">⭐</div>
+                                            <p className="text-2xl text-gray-700 mb-2">This certifies that</p>
+                                            <h4 className="text-5xl font-bold text-purple-600 mb-4" style={{fontFamily: 'cursive'}}>
+                                                {studentName}
+                                            </h4>
+                                            <p className="text-xl text-gray-700 mb-2">has successfully completed the</p>
+                                            <p className="text-2xl font-bold text-gray-800 mb-4">Multiplication Master Quiz</p>
+                                            <p className="text-xl text-gray-700 mb-2">with an outstanding score of</p>
+                                            <div className="text-6xl font-bold text-green-600 mb-4">{percentage}%</div>
+                                            <div className="flex justify-center gap-4 mb-4">
+                                                <div className="text-4xl">🌟</div>
+                                                <div className="text-4xl">🎉</div>
+                                                <div className="text-4xl">🌟</div>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mb-4">Date: {currentDate}</p>
+                                            <div className="border-t-2 border-gray-400 pt-4">
+                                                <p className="text-gray-700 font-semibold">Multiplication Master Program</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={printCertificate}
+                                            className="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold text-xl rounded-xl transition-all mb-4"
+                                        >
+                                            🖨️ Print Certificate
+                                        </button>
+                                        
+                                        <div className="bg-green-100 border-2 border-green-400 rounded-2xl p-6 mb-8">
+                                            <p className="text-green-800 font-bold text-xl">
+                                                🎊 Congratulations, {studentName}! 🎊
+                                            </p>
+                                            <p className="text-green-700 text-lg mt-2">
+                                                You're a Multiplication Master! Keep up the amazing work!
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-blue-100 border-2 border-blue-400 rounded-2xl p-6 mb-8">
+                                        <p className="text-blue-800 font-bold text-xl">
+                                            Good effort, {studentName}! 👏
+                                        </p>
+                                        <p className="text-blue-700 text-lg mt-2">
+                                            You're on the right track! Practice a bit more to get your certificate!
+                                        </p>
+                                    </div>
+                                )}
                                 
                                 <div className="grid grid-cols-2 gap-4 mb-8">
                                     <div className="bg-blue-100 rounded-2xl p-6">
@@ -466,5 +582,22 @@
 
         ReactDOM.render(<MultiplicationQuiz />, document.getElementById('root'));
     </script>
+    
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .bg-gradient-to-br.from-yellow-50, .bg-gradient-to-br.from-yellow-50 * {
+                visibility: visible;
+            }
+            .bg-gradient-to-br.from-yellow-50 {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    </style>
 </body>
 </html>
